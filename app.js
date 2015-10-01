@@ -87,10 +87,14 @@ fs.readdir(NGINX_PATH, (err, files) => {
 
         // prompt user for action
         inquirer.prompt(questions, function (answers){
-
-          console.log(answers);
+          // console.log(answers);
           if(answers.askToggleSite){
-            toggleSite(sitesEnabled, answers.askToggleSite);
+            toggleSites(sitesEnabled, answers.askToggleSite, (err)=>{
+              if(err){
+                console.log(err);
+                process.exit(1);
+              }
+            });
           }
         });
 
@@ -108,34 +112,61 @@ function xorleft (array0, array1){
   });
 }
 
+// Nginx process functions
+function manageNginx(action, callback) {
+  // TODO: research if sending signals is better
+  // i.e. sudo nginx -s stop|quit|reload
+  exec(`sudo service nginx ${action}`, (err, stdout, stderr)=>{
+    if(err){
+      console.log(`failed to $(action) nginx`);
+      return callback(err);
+    }
+    console.log(`${action}ed nginx`);
+    return callback();
+  });
+}
+
 // Toggle site function and helpers
 function enableSite (site, callback){
-  // TODO: change for console.log to exec
-  console.log(`sudo ln -s ${NGINX_PATH}${sitesAvailableStr}/${site} ${NGINX_PATH}${sitesEnabledStr}/${site}`);
-  callback();
+  exec(`sudo ln -s ${NGINX_PATH}${sitesAvailableStr}/${site} ${NGINX_PATH}${sitesEnabledStr}/${site}`, (err, stdout, stderr)=>{
+    if(err){
+      return callback(err);
+    }
+    console.log(`enable ${site}`, stdout, stderr);
+    callback();
+  });
 }
 
 function disableSite (site, callback){
-  // TODO: change for console.log to exec
-  console.log(`sudo rm ${NGINX_PATH}${sitesEnabledStr}/${site}`);
-  callback();
+  exec(`sudo rm ${NGINX_PATH}${sitesEnabledStr}/${site}`, (err, stdout, stderr)=>{
+    if(err){
+      return callback(err);
+    }
+    console.log(`disable ${site}`, stdout, stderr);
+    callback();
+  });
 }
 
-function toggleSite (sitesEnabled, askToggleSiteAnswers){
+function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
+  async.series([
     // enable sites
-    async.eachSeries(xorleft(askToggleSiteAnswers, sitesEnabled),
-    enableSite, (err)=>{
-      if(err){
-        console.log(err);
-        process.exit(1);
-      }
-    });
+    function(callback){
+      async.eachSeries(xorleft(askToggleSiteAnswers, sitesEnabled),enableSite,
+        callback);
+    },
     // disable sites
-    async.eachSeries(xorleft(sitesEnabled, askToggleSiteAnswers),
-    disableSite, (err)=>{
-      if(err){
-        console.log(err);
-        process.exit(1);
-      }
-    });
+    function(callback){
+      async.eachSeries(xorleft(sitesEnabled, askToggleSiteAnswers),disableSite,
+        callback);
+    },
+    // reload nginx configuration
+    function(callback){
+      manageNginx('reload', callback);
+    }
+  ], (err)=>{
+    if (err) {
+      return toggleDoneCB(err);
+    }
+    toggleDoneCB();
+  });
 }

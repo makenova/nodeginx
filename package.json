@@ -1,17 +1,26 @@
 {
-  "name": "nginx-config",
+  "name": "@makenova/nodeginx",
   "version": "1.0.0",
-  "description": "A helper to add and manage nginx configs.",
+  "description": "An nginx CLI helper.",
   "main": "app.js",
   "bin": {
     "nodeginx": "./app.js"
   },
   "scripts": {
-    "hint": "jshint app.js"
+    "hint": "jshint app.js",
+    "test": "echo \"No test! Zone!\""
   },
-  "keywords": [],
+  "keywords": ["nginx"],
   "author": "makenova",
-  "license": "ISC",
+  "license": "MIT",
+  "repository": {"type":"git",
+    "url":"https://github.com/makenova/nodeginx"
+  },
+  "bugs": "https://github.com/makenova/nodeginx/issues",
+  "engines": {
+    "node": ">=4.1.1"
+  },
+  "os":["linux"],
   "dependencies": {
     "async": "^1.4.2",
     "chalk": "^1.1.1",
