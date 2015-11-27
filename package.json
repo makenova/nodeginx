@@ -10,21 +10,27 @@
     "hint": "jshint app.js",
     "test": "echo \"No test! Zone!\""
   },
-  "keywords": ["nginx"],
+  "keywords": [
+    "nginx"
+  ],
   "author": "makenova",
   "license": "MIT",
-  "repository": {"type":"git",
-    "url":"https://github.com/makenova/nodeginx"
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/makenova/nodeginx"
   },
   "bugs": "https://github.com/makenova/nodeginx/issues",
   "engines": {
     "node": ">=4.1.1"
   },
-  "os":["linux"],
+  "os": [
+    "linux"
+  ],
   "dependencies": {
     "async": "^1.4.2",
     "chalk": "^1.1.1",
-    "inquirer": "^0.10.1"
+    "inquirer": "^0.10.1",
+    "mustache": "^2.2.0"
   },
   "devDependencies": {
     "jshint": "^2.8.0",

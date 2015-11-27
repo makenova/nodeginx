@@ -2,39 +2,33 @@
 
 var fs = require('fs');
 var chalk = require('chalk');
-var async = require('async');
 var inquirer = require('inquirer');
-var exec = require('child_process').exec;
 
-// TODO: account for alternate install locations
-// http://nginx.org/en/docs/beginners_guide.html
-// nginx may be installed in /usr/local/nginx/conf, /etc/nginx, or
-// /usr/local/etc/nginx.
+var nodeginx = require('./nodeginx');
 
-// nginx constants
-const NGINX_PATH = '/etc/nginx/';
-const sitesAvailableStr = 'sites-available';
-const sitesEnabledStr = 'sites-enabled';
 const CR = '\n';
 
-// actions
+// user actions
 const toggleSiteStr = 'enable/disable a site';
 const addSiteStr = 'add a site';
+const addSitePathStr = 'enter path to config file';
+const addSiteStaticTplStr = 'use static template';
+const addSiteProxyTplStr = 'use proxy template';
 const removeSiteStr = 'remove a site';
 const manageNginxStr = 'start/stop/restart nginx';
 const exitProgramStr = 'exit';
 
-fs.readdir(NGINX_PATH, (err, files) => {
+fs.readdir(nodeginx.constants.NGINX_PATH, (err, files) => {
   bail(err);
   var sitesFolders = files.some((file)=>{
-    return file === sitesAvailableStr || file === sitesEnabledStr;
+    return file === nodeginx.constants.sitesAvailableStr || file === nodeginx.constants.sitesEnabledStr;
   });
   if (sitesFolders){
-    fs.readdir(NGINX_PATH + sitesAvailableStr, (err, files) => {
+    fs.readdir(nodeginx.constants.NGINX_PATH + nodeginx.constants.sitesAvailableStr, (err, files) => {
       'use strict';
       bail(err);
       let sitesAvailable = files;
-      fs.readdir(NGINX_PATH + sitesEnabledStr, (err, files) => {
+      fs.readdir(nodeginx.constants.NGINX_PATH + nodeginx.constants.sitesEnabledStr, (err, files) => {
         bail(err);
         let sitesEnabled = files;
 
@@ -72,18 +66,78 @@ fs.readdir(NGINX_PATH, (err, files) => {
           {
             type: 'checkbox',
             name: 'askToggleSite',
-            message: 'Select sites to enable (spacebar to select)',
+            message: 'Select sites to enable (spacebar to select):',
             choices: markedSites,
             when: function (answers){
               return answers.action === toggleSiteStr;
             }
           },
           {
-            type: 'input',
+            type: 'list',
             name: 'askAddSite',
-            message: 'Enter path to config file',
+            message: 'How would you like to add a site?',
+            choices: [addSitePathStr, addSiteStaticTplStr, addSiteProxyTplStr],
             when: function (answers){
               return answers.action === addSiteStr;
+            }
+          },
+          {
+            type: 'input',
+            name: 'askAddSiteConfig',
+            message: 'Enter path to config file:',
+            when: function (answers){
+              return answers.askAddSite === addSitePathStr;
+            }
+          },
+          {
+            type: 'input',
+            name: 'tplPort',
+            message: 'What port is Nginx listening on?',
+            default: '80',
+            when: function (answers){
+              return (answers.askAddSite === addSiteStaticTplStr ||
+                answers.askAddSite === addSiteProxyTplStr);
+            }
+          },
+          {
+            type: 'input',
+            name: 'tplServerName',
+            message: 'Enter the site name:',
+            when: function (answers){
+              return Boolean(answers.tplPort);
+            }
+          },
+          {
+            type: 'input',
+            name: 'tplSiteRoot',
+            message: 'Enter the path to the site root:',
+            when: function (answers){
+              return Boolean(answers.askAddSite === addSiteStaticTplStr &&
+                answers.tplServerName);
+            }
+          },
+          {
+            type: 'input',
+            name: 'proxyServerIp',
+            message: 'Enter the proxy server IP address:',
+            default: '127.0.0.1',
+            filter: (userport)=>{
+              if (userport.toLowerCase() === 'localhost')
+                userport = '127.0.0.1';
+              return userport;
+            },
+            when: function (answers){
+              return (answers.askAddSite === addSiteProxyTplStr &&
+                answers.tplServerName);
+            }
+          },
+          {
+            type: 'input',
+            name: 'proxyServerPort',
+            message: 'Enter the proxy server port:',
+            default: '6969',
+            when: function (answers){
+              return answers.proxyServerIp;
             }
           },
           {
@@ -120,18 +174,21 @@ fs.readdir(NGINX_PATH, (err, files) => {
         // prompt user for action and handle user answers
         inquirer.prompt(questions, function (answers){
           if (answers.askToggleSite) {
-            toggleSites(sitesEnabled, answers.askToggleSite, (err)=>{
+            nodeginx.toggleSites(sitesEnabled, answers.askToggleSite, (err)=>{
               bail(err);
             });
           }else if (answers.askAddSite) {
-            addSite(answers.askAddSite);
+            nodeginx.addSite(answers, (err)=>{
+              bail(err);
+              gracefulExit();
+            });
           }else if (answers.askConfirmRemoveSite) {
-            removeSite(answers.askRemoveSite, (err)=>{
+            nodeginx.removeSite(answers.askRemoveSite, (err)=>{
               bail(err);
               gracefulExit();
             });
           }else if (answers.askManageNginx) {
-            manageNginx(answers.askManageNginx, (err)=>{
+            nodeginx.manageNginx(answers.askManageNginx, (err)=>{
               bail(err);
             });
           }else {
@@ -144,14 +201,6 @@ fs.readdir(NGINX_PATH, (err, files) => {
 });
 
 // Utility
-function xorleft (array0, array1){
-  return array0.filter(array0element=>{
-    return !array1.some(array1element=>{
-      return array1element === array0element;
-    });
-  });
-}
-
 function gracefulExit() {
   console.log('Bye!');
   process.exit(0);
@@ -162,104 +211,4 @@ function bail(err){
     console.log(err);
     process.exit(1);
   }
-}
-
-function fileExists(filepath){
-  fs.stat(filepath, (err, stats)=>{
-    return Boolean(stats);
-  });
-}
-
-function sudoRemove(filepath, callback) {
-  // Would prefer `fs.unlink` but, I don't know how to make it work with sudo
-  exec(`sudo rm ${filepath}`, (err, stdout, stderr)=>{
-    if(err) return callback(err);
-    console.log(stdout, stderr);
-    callback();
-  });
-}
-
-// Nginx process functions
-function manageNginx(action, callback) {
-  // TODO: research if sending signals is better
-  // i.e. sudo nginx -s stop|quit|reload
-  exec(`sudo service nginx ${action}`, (err, stdout, stderr)=>{
-    if(err){
-      console.log(`failed to $(action) nginx`);
-      return callback(err);
-    }
-    console.log(`${action}ed nginx`);
-    return callback();
-  });
-}
-
-// Toggle site function and helpers
-function enableSite (site, callback){
-  // would prefer `fs.symlink` but, sudo
-  exec(`sudo ln -s ${NGINX_PATH}${sitesAvailableStr}/${site} ${NGINX_PATH}${sitesEnabledStr}/${site}`, (err, stdout, stderr)=>{
-    if(err) return callback(err);
-    console.log(`enable ${site}`, stdout, stderr);
-    callback();
-  });
-}
-
-function disableSite (site, callback){
-  sudoRemove(`${NGINX_PATH}${sitesEnabledStr}/${site}`, (err)=>{
-    if(err) return callback(err);
-    console.log(`disabled ${site}`);
-    callback();
-  });
-}
-
-function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
-  async.series([
-    // enable sites
-    (callback)=>{
-      async.eachSeries(xorleft(askToggleSiteAnswers, sitesEnabled),enableSite,
-        callback);
-    },
-    // disable sites
-    (callback)=>{
-      async.eachSeries(xorleft(sitesEnabled, askToggleSiteAnswers),disableSite,
-        callback);
-    },
-    // reload nginx configuration
-    (callback)=>{
-      manageNginx('reload', callback);
-    }
-  ], (err)=>{
-    if (err) {
-      return toggleDoneCB(err);
-    }
-    toggleDoneCB();
-  });
-}
-
-// Add and remove virtual host file
-function addSite (pathToConfig){
-  console.log('addSite', pathToConfig);
-}
-
-function removeSite (site, removeSiteDoneCB){
-  // if the file is currently enabled, disable it before removing it.
-  async.series([
-    (callback)=>{
-      if(fileExists(`${NGINX_PATH}${sitesEnabledStr}/${site}`)){
-        disableSite(site, callback);
-      }else{
-        return callback();
-      }
-    }, (callback)=>{
-      sudoRemove(`${NGINX_PATH}${sitesAvailableStr}/${site}`, (err)=>{
-        if(err) return callback(err);
-        console.log(`${site} removed`);
-        return callback();
-      });
-    }, (callback)=>{
-      manageNginx('reload', callback);
-    }
-  ], (err)=>{
-    if(err) return removeSiteDoneCB(err);
-    return removeSiteDoneCB();
-  });
 }
