@@ -59,4 +59,4 @@ Please report any bugs to: <https://github.com/makenova/nodeginx/issues>
 
 ## License
 
-Licensed under the MIT License: https://opensource.org/licenses/MIT
+Licensed under the MIT License: <https://opensource.org/licenses/MIT>
