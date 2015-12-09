@@ -122,8 +122,9 @@ function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
 
 // Add and remove virtual host file
 function addSite (addSiteObj, callback){
-  if (addSiteObj.askAddSite.toLowerCase().indexOf('template') > 0){
-    var tplFilePath = addSiteObj.askAddSite.toLowerCase().indexOf('static') ?
+  var addSiteAns = addSiteObj.askAddSite.toLowerCase();
+  if (addSiteAns.indexOf('template') > 0){
+    var tplFilePath = (addSiteAns.indexOf('static') > 0) ?
       `${__dirname}/templates/static` :
       `${__dirname}/templates/proxy`;
 
