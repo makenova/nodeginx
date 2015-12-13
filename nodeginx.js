@@ -44,7 +44,6 @@ function sudoRemove(filepath, callback) {
   // Would prefer `fs.unlink` but, I don't know how to make it work with sudo
   exec(`sudo rm ${filepath}`, (err, stdout, stderr)=>{
     if(err) return callback(err);
-    console.log(stdout, stderr);
     callback();
   });
 }
@@ -55,7 +54,6 @@ function sudoMove(filepath, dest, mvBool, callback) {
   var cmd = `sudo ${mvORcp} ${filepath} ${dest}`;
   exec(cmd, (err, stdout, stderr)=>{
     if(err) return callback(err);
-    console.log(stdout, stderr);
     callback();
   });
 }
@@ -66,10 +64,8 @@ function manageNginx(action, callback) {
   // i.e. sudo nginx -s stop|quit|reload
   exec(`sudo service nginx ${action}`, (err, stdout, stderr)=>{
     if(err){
-      console.log(`failed to $(action) nginx`);
       return callback(err);
     }
-    console.log(`${action}ed nginx`);
     return callback();
   });
 }
@@ -83,7 +79,6 @@ function enableSite (site, callback){
 
   exec(cmd, (err, stdout, stderr)=>{
     if(err) return callback(err);
-    console.log(`enable ${site}`, stdout, stderr);
     callback();
   });
 }
@@ -91,23 +86,18 @@ function enableSite (site, callback){
 function disableSite (site, callback){
   sudoRemove(`${NGINX_PATH}${sitesEnabledStr}/${site}`, (err)=>{
     if(err) return callback(err);
-    console.log(`disabled ${site}`);
     callback();
   });
 }
 
 function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
+  var enabledSites = xorleft(askToggleSiteAnswers, sitesEnabled);
+  var disabledSites = xorleft(sitesEnabled, askToggleSiteAnswers);
   async.series([
     // enable sites
-    (callback)=>{
-      async.eachSeries(xorleft(askToggleSiteAnswers, sitesEnabled),enableSite,
-        callback);
-    },
+    (callback)=>{ async.eachSeries(enabledSites, enableSite, callback); },
     // disable sites
-    (callback)=>{
-      async.eachSeries(xorleft(sitesEnabled, askToggleSiteAnswers),disableSite,
-        callback);
-    },
+    (callback)=>{  async.eachSeries(disabledSites, disableSite, callback); },
     // reload nginx configuration
     (callback)=>{
       manageNginx('reload', callback);
@@ -116,7 +106,12 @@ function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
     if (err) {
       return toggleDoneCB(err);
     }
-    toggleDoneCB();
+    var sitestStateObj = {
+      enabledSites: enabledSites,
+      disabledSites: disabledSites
+    };
+
+    toggleDoneCB(null, sitestStateObj);
   });
 }
 
@@ -135,10 +130,13 @@ function addSite (addSiteObj, callback){
       var tempfilepath = `${__dirname}/${site}`;
       var sitesAvailable = `${NGINX_PATH}${sitesAvailableStr}/`;
 
-      console.log(`${site} config file will be added to ${sitesAvailableStr}`);
       fs.writeFile(tempfilepath, config, (err)=>{
         if(err) return callback(err);
-        sudoMove(tempfilepath, sitesAvailable, true, callback);
+        sudoMove(tempfilepath, sitesAvailable, true, (err)=>{
+          if(err) return callback(err);
+          var msg = `${site} config file will be added to ${sitesAvailableStr}`;
+          callback(null, msg);
+        });
       });
     });
   }else{
@@ -162,7 +160,6 @@ function removeSite (site, removeSiteDoneCB){
     }, (callback)=>{
       sudoRemove(`${NGINX_PATH}${sitesAvailableStr}/${site}`, (err)=>{
         if(err) return callback(err);
-        console.log(`${site} removed`);
         return callback();
       });
     }, (callback)=>{

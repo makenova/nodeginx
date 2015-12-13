@@ -1,14 +1,11 @@
 {
   "name": "@makenova/nodeginx",
-  "version": "1.1.1",
-  "description": "An nginx CLI helper.",
-  "main": "app.js",
-  "bin": {
-    "nodeginx": "./app.js"
-  },
+  "version": "2.0.0",
+  "description": "An nginx helper.",
+  "main": "nodeginx.js",
   "scripts": {
     "hint": "jshint app.js",
-    "test": "echo \"No test! Zone!\""
+    "test": "echo \"No test, Zone!\""
   },
   "keywords": [
     "nginx",
@@ -31,12 +28,6 @@
   ],
   "dependencies": {
     "async": "^1.4.2",
-    "chalk": "^1.1.1",
-    "inquirer": "^0.10.1",
     "mustache": "^2.2.0"
-  },
-  "devDependencies": {
-    "jshint": "^2.8.0",
-    "nodemon": "^1.4.1"
   }
 }

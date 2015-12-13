@@ -1,10 +1,9 @@
 # nodeginx
 
-This is a work in progress, built with my narrow use case in mind.
-
-Nodeginx is a CLI helper for managing [Nginx](https://www.nginx.com) virtual
-host configs. This assumes you are using the sites-available and
-sites-enabled setup, where those directories are arranged as so,
+A CLI helper for managing [Nginx](https://www.nginx.com) virtual
+host configs and the `nginx` process. This assumes you are using the
+sites-available and sites-enabled setup, where those directories are arranged as
+so,
 
 ```
 /etc
@@ -23,7 +22,8 @@ above, site-one and site-two are setup but only site-two is served by nginx.
 
 ## Installation
 
-This is a scoped [NPM](https://www.npmjs.com) package, [Node.js](https://nodejs.org/en/) is a prerequisite.
+This is a scoped [NPM](https://www.npmjs.com) package, [Node.js](https://nodejs.org/en/)
+is a prerequisite.
 
 ```
 $ npm install --g @makenova/nodeginx
