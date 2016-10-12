@@ -1,6 +1,6 @@
 # nodeginx
 
-A CLI helper for managing [Nginx](https://www.nginx.com) virtual
+A helper library for managing [Nginx](https://www.nginx.com) virtual
 host configs and the `nginx` process. This assumes you are using the
 sites-available and sites-enabled setup, where those directories are arranged as
 so,
@@ -20,6 +20,12 @@ server blocks are setup in the sites-available directory and are "turned on"
 by creating a symbolic link to the sites-enabled directory. In the example
 above, site-one and site-two are setup but only site-two is served by nginx.
 
+## NOTE
+
+**Writing tests for this has made me realize that the API is difficult to work
+with. I'm slowly fixing that. That means that the documentation and tests are
+incomplete.**
+
 ## Installation
 
 This is a scoped [NPM](https://www.npmjs.com) package, [Node.js](https://nodejs.org/en/)
@@ -31,29 +37,71 @@ $ npm install --g @makenova/nodeginx
 
 ## Use
 
-Type `nodeginx` on the command line, your sites should be listed, and you
-will be prompted. The nginx config files are usually in a directory that
-requires root permission. You may be prompted for you password if your user is
-not set up for pasword-less sudo (not tested).
+This can be used as a standalone module but was made to be used through [`nodeginx-cli`](https://github.com/makenova/nodeginx-cli).
 
 ```
-makenova@gia:~$ nodeginx
-✔ is enabled
-✘ is disabled
+var nodeginx = require('@makenova/nodeginx')
 
-default ✘
-makenova ✔
-votebot ✔
-webtask ✘
+const staticSiteObj = {
+  askAddSite: 'use static template',
+  tplPort: '80',
+  tplServerName: 'mynameisjeffery',
+  tplSiteRoot: '/home/user/mynameisjeffery'
+}
 
-
-? What would you like to do? (Use arrow keys)
-❯ enable/disable a site
-  add a site
-  remove a site
-  start/stop/restart nginx
-  exit
+nodeginx.addsite(staticSiteObj, function (err, message) {
+  if (err) throw(err)
+  console.log(message) // => pandas config file will be added to /etc/nginx/sites-available
+})
 ```
+
+## API
+
+### `nodeginx.addsite(siteObj, cb)`
+
+Add a site to the sites-available directory. The callback(`cb`) returns an
+error `err` and a `message`.
+
+The siteObj should have the following properties:
+
+###### `siteObj.askAddSite `
+
+string : 'use static template'
+
+###### `siteObj.tplPort`
+
+nubmer : 80 the port that the site should be served on
+
+###### `siteObj.tplServerName`
+
+string : 'pandas' the name of the site
+
+###### `siteObj.tplSiteRoot`
+
+string : '/home/user/pandas' The path to the site
+
+### `nodeginx.removeSite(siteName, cb)`
+
+Remove a site from the sites-available directory. If the site is enabled i.e.
+has a symbolic link in the sites-enabled directory, the symbolic link will be
+removed first. The callback(`cb`) only returns an `err`.
+
+### `nodeginx.manageNginx(siteName, cb)`
+
+Start, stop, reload, etc. nginx
+
+### `nodeginx.toggleSites(siteName, cb)`
+
+Enable or disable sites.
+
+### `nodeginx.constants`
+
+An object with useful constants
+
+  * NGINX_PATH
+  * sitesAvailableStr
+  * sitesEnabledStr
+
 ## Bugs
 Please report any bugs to: <https://github.com/makenova/nodeginx/issues>
 

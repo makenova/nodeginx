@@ -1,6 +1,6 @@
 var fs = require('fs');
-var async = require('async');
 var exec = require('child_process').exec;
+var async = require('async');
 var mustache = require('mustache');
 
 // TODO: account for alternate install locations
@@ -9,7 +9,7 @@ var mustache = require('mustache');
 // /usr/local/etc/nginx.
 
 // nginx constants
-const NGINX_PATH = '/etc/nginx/';
+const NGINX_PATH = process.env.NGINX_PATH || '/etc/nginx/';
 const sitesAvailableStr = 'sites-available';
 const sitesEnabledStr = 'sites-enabled';
 
@@ -63,9 +63,7 @@ function manageNginx(action, callback) {
   // TODO: research if sending signals is better
   // i.e. sudo nginx -s stop|quit|reload
   exec(`sudo service nginx ${action}`, (err, stdout, stderr)=>{
-    if(err){
-      return callback(err);
-    }
+    if(err) return callback(err);
     return callback();
   });
 }
@@ -103,9 +101,8 @@ function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
       manageNginx('reload', callback);
     }
   ], (err)=>{
-    if (err) {
-      return toggleDoneCB(err);
-    }
+    if (err) return toggleDoneCB(err);
+
     var sitestStateObj = {
       enabledSites: enabledSites,
       disabledSites: disabledSites
