@@ -1,6 +1,6 @@
 {
   "name": "@makenova/nodeginx",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "An nginx helper.",
   "main": "nodeginx.js",
   "scripts": {
@@ -27,7 +27,7 @@
     "linux"
   ],
   "dependencies": {
-    "async": "^1.4.2",
+    "async": "^2.1.1",
     "execa": "^0.5.0",
     "mustache": "^2.2.0"
   },

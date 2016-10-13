@@ -15,8 +15,6 @@ const sitesEnabledStr = 'sites-enabled';
 
 module.exports = {
   manageNginx: manageNginx,
-  // TODO: remove this method, enable and disable are enough to accomplish this
-  toggleSites: toggleSites,
   enableSite: enableSite,
   disableSite: disableSite,
   removeSite: removeSite,
@@ -30,14 +28,6 @@ module.exports = {
 };
 
 // Utility
-function xorleft (array0, array1){
-  return array0.filter(array0element=>{
-    return !array1.some(array1element=>{
-      return array1element === array0element;
-    });
-  });
-}
-
 function fileExists(filepath){
   try {
     Boolean(fs.statSync(filepath))
@@ -75,7 +65,6 @@ function manageNginx(action, callback) {
   });
 }
 
-// Toggle site function and helpers
 function enableSite (site, callback){
   // would prefer `fs.symlink` but, sudo
   var availablePath = `${NGINX_PATH}${sitesAvailableStr}/${site}`;
@@ -94,32 +83,6 @@ function disableSite (site, callback){
     callback();
   });
 }
-
-function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
-  var enabledSites = xorleft(askToggleSiteAnswers, sitesEnabled);
-  var disabledSites = xorleft(sitesEnabled, askToggleSiteAnswers);
-  async.series([
-    // enable sites
-    (callback)=>{ async.eachSeries(enabledSites, enableSite, callback); },
-    // disable sites
-    (callback)=>{  async.eachSeries(disabledSites, disableSite, callback); },
-    // reload nginx configuration
-    (callback)=>{
-      manageNginx('reload', callback);
-    }
-  ], (err)=>{
-    if (err) return toggleDoneCB(err);
-
-    var sitestStateObj = {
-      enabledSites: enabledSites,
-      disabledSites: disabledSites
-    };
-
-    toggleDoneCB(null, sitestStateObj);
-  });
-}
-
-// Add and remove virtual host file
 
 function makeSiteFromTemplate (tplFilePath, addSiteObj, callback) {
   fs.readFile(tplFilePath, 'utf8', (err, tmpl)=>{
