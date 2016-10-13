@@ -8,22 +8,38 @@ const TEMP_FOLDER = os.tmpdir()
 const AVAILABLE = path.join(TEMP_FOLDER, nodeginx.constants.sitesAvailableStr)
 const ENABLED = path.join(TEMP_FOLDER, nodeginx.constants.sitesEnabledStr)
 
+// TODO: use the real paths until I figure out how to run ava with NGINX_PATH
+// set to the temp paths above
+const siteFilepathAvailable = path.join(nodeginx.constants.NGINX_PATH,
+  nodeginx.constants.sitesAvailableStr)
+const siteFilepathEnabled = path.join(nodeginx.constants.NGINX_PATH,
+  nodeginx.constants.sitesEnabledStr)
+
 // test objects
 const staticSiteObj = {
   askAddSite: 'use static template',
   tplPort: '80',
-  tplServerName: 'bums',
-  tplSiteRoot: '~/bums'
+  tplServerName: 'panda',
+  tplSiteRoot: '/home/user/panda'
 }
-const staticSiteFilepath = path.join(nodeginx.constants.NGINX_PATH, nodeginx.constants.sitesAvailableStr, staticSiteObj.tplServerName)
+
+const proxySiteObj = {
+  askAddSite: 'use proxy template',
+  tplPort: '80',
+  tplServerName: 'otter',
+  proxyServerIp: '127.0.0.1',
+  proxyServerPort: '8080'
+}
+
 
 // helpers
 function fileExists (path, callback) {
-  fs.stat(path, callback)
+  fs.stat(path, function (err) {
+    return callback(!Boolean(err))
+  })
 }
 
 function makefolder (folder) {
-  console.log(folder)
   return new Promise(function (resolve, reject) {
     fs.mkdir(folder, function(err) {
       if(err) return reject(err)
@@ -52,22 +68,78 @@ test.after.always( async function () {
 })
 
 test.cb('add static site', function (t) {
-  nodeginx.addSite(staticSiteObj, function(err, message) {
+  nodeginx.addStaticSite(staticSiteObj, function(err, message) {
     if (err) t.end(err)
-    fs.stat(staticSiteFilepath, function (err) {
-      if (err) return t.end(err)
-      t.end()
-    })
+    fileExists(path.join(siteFilepathAvailable, staticSiteObj.tplServerName),
+      function (exists) {
+console.log('panda', exists)
+        if (!exists) return t.end(new Error('Failed to add static site'))
+        t.end()
+      }
+    )
   })
 })
 
-test.cb('remove static site', function (t) {
-  nodeginx.removeSite(staticSiteObj.tplServerName, function (err) {
+test.cb('enable a site', function (t) {
+  nodeginx.enableSite(staticSiteObj.tplServerName, function (err) {
     if (err) return t.end(err)
-    fileExists(staticSiteFilepath, function (err) {
-      // The file should not exist, so an error is expected
-      if (err) return t.end()
-      t.end('File should not exist')
-    })
+    fs.lstat(path.join(siteFilepathEnabled, staticSiteObj.tplServerName),
+      function (err, stats) {
+        if (err) return t.end(err)
+        t.truthy(stats.isSymbolicLink(stats))
+        t.end()
+      }
+    )
+    t.end()
   })
 })
+
+test.cb('disable a site', function (t) {
+  nodeginx.disableSite(staticSiteObj.tplServerName, function (err) {
+    if (err) return t.end(err)
+    fileExists(path.join(siteFilepathEnabled, staticSiteObj.tplServerName),
+      function (exists) {
+        if (exists) return t.end(new Error('Failed to disable site'))
+        t.end()
+      }
+    )
+  })
+})
+
+test.cb('remove site', function (t) {
+  nodeginx.removeSite(staticSiteObj.tplServerName, function (err) {
+    if (err) return t.end(err)
+    fileExists(path.join(siteFilepathAvailable, staticSiteObj.tplServerName),
+      function (exists) {
+        if (exists) return t.end(new Error('Failed to remove static site'))
+        t.end()
+      }
+    )
+  })
+})
+
+test.cb('add proxy site', function (t) {
+  nodeginx.addProxySite(proxySiteObj, function(err, message) {
+    if (err) t.end(err)
+    fs.stat(path.join(siteFilepathAvailable, proxySiteObj.tplServerName),
+      function (err) {
+        if (err) return t.end(err)
+        t.end()
+      }
+    )
+  })
+})
+
+test.cb(`make sure site is disabled before it's removed`, function (t) {
+  nodeginx.removeSite(proxySiteObj.tplServerName, function (err) {
+    if (err) return t.end(err)
+    fileExists(path.join(siteFilepathEnabled, proxySiteObj.tplServerName),
+      function (exists) {
+        if (exists) return t.end(new Error('Failed to remove proxy site'))
+        t.end()
+      }
+    )
+  })
+})
+
+test.todo('test nodeginx.manageNginx')

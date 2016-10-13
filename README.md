@@ -45,22 +45,21 @@ var nodeginx = require('@makenova/nodeginx')
 const staticSiteObj = {
   askAddSite: 'use static template',
   tplPort: '80',
-  tplServerName: 'mynameisjeffery',
-  tplSiteRoot: '/home/user/mynameisjeffery'
+  tplServerName: 'panda',
+  tplSiteRoot: '/home/user/panda'
 }
 
-nodeginx.addsite(staticSiteObj, function (err, message) {
+nodeginx.addStaticSite(staticSiteObj, function (err, message) {
   if (err) throw(err)
-  console.log(message) // => pandas config file will be added to /etc/nginx/sites-available
+  console.log(message) // => panda config file will be added to /etc/nginx/sites-available
 })
 ```
 
 ## API
 
-### `nodeginx.addsite(siteObj, cb)`
+### `nodeginx.addStaticSite(siteObj, cb)`
 
-Add a site to the sites-available directory. The callback(`cb`) returns an
-error `err` and a `message`.
+Add a static site to the sites-available directory. The callback(`cb`) returns an error `err` and a `message`.
 
 The siteObj should have the following properties:
 
@@ -74,11 +73,37 @@ nubmer : 80 the port that the site should be served on
 
 ###### `siteObj.tplServerName`
 
-string : 'pandas' the name of the site
+string : 'panda' the name of the site
 
 ###### `siteObj.tplSiteRoot`
 
-string : '/home/user/pandas' The path to the site
+string : '/home/user/panda' The path to the site
+
+### `nodeginx.addProxySite(siteObj, cb)`
+
+Add a proxy site to the sites-available directory. The callback(`cb`) returns an error `err` and a `message`.
+
+The siteObj should have the following properties:
+
+###### `siteObj.askAddSite `
+
+string : 'use proxy template'
+
+###### `siteObj.tplPort`
+
+nubmer : 80 the port that the site should be served on
+
+###### `siteObj.tplServerName`
+
+string : 'panda' the name of the site
+
+###### `siteObj.proxyServerIp`
+
+string : '127.0.0.1' The IP address of the server where the site is running
+
+###### `siteObj.proxyServerPort`
+
+string : '8080' The port that the application is running on
 
 ### `nodeginx.removeSite(siteName, cb)`
 
@@ -86,21 +111,26 @@ Remove a site from the sites-available directory. If the site is enabled i.e.
 has a symbolic link in the sites-enabled directory, the symbolic link will be
 removed first. The callback(`cb`) only returns an `err`.
 
-### `nodeginx.manageNginx(siteName, cb)`
+### `nodeginx.enableSite(siteName, cb)`
+
+Enable a site. All this does is create a symlink of a site in the
+`sites-available` directory to the `sites-enabled` directory.
+
+### `nodeginx.disableSite(siteName, cb)`
+
+Disable a site. Delete a symlink of a site from the `sites-enabled` directory.
+
+### `nodeginx.manageNginx(action, cb)`
 
 Start, stop, reload, etc. nginx
-
-### `nodeginx.toggleSites(siteName, cb)`
-
-Enable or disable sites.
 
 ### `nodeginx.constants`
 
 An object with useful constants
 
-  * NGINX_PATH
-  * sitesAvailableStr
-  * sitesEnabledStr
+  * NGINX_PATH - the `nginx.conf` location, defaults to '/etc/nginx'
+  * sitesAvailableStr - the name of the `sites-available` directory
+  * sitesEnabledStr - the name of the `sites-enabled` directory
 
 ## Bugs
 Please report any bugs to: <https://github.com/makenova/nodeginx/issues>
