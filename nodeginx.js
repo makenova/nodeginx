@@ -15,9 +15,13 @@ const sitesEnabledStr = 'sites-enabled';
 
 module.exports = {
   manageNginx: manageNginx,
+  // TODO: remove this method, enable and disable are enough to accomplish this
   toggleSites: toggleSites,
+  enableSite: enableSite,
+  disableSite: disableSite,
   removeSite: removeSite,
-  addSite: addSite,
+  addStaticSite: addStaticSite,
+  addProxySite: addProxySite,
   constants: {
     NGINX_PATH: NGINX_PATH,
     sitesAvailableStr: sitesAvailableStr,
@@ -35,9 +39,12 @@ function xorleft (array0, array1){
 }
 
 function fileExists(filepath){
-  fs.stat(filepath, (err, stats)=>{
-    return Boolean(stats);
-  });
+  try {
+    Boolean(fs.statSync(filepath))
+  } catch(e) {
+    return false
+  }
+  return true
 }
 
 function sudoRemove(filepath, callback) {
@@ -113,35 +120,56 @@ function toggleSites (sitesEnabled, askToggleSiteAnswers, toggleDoneCB){
 }
 
 // Add and remove virtual host file
-function addSite (addSiteObj, callback){
-  var addSiteAns = addSiteObj.askAddSite.toLowerCase();
-  if (addSiteAns.indexOf('template') > 0){
-    var tplFilePath = (addSiteAns.indexOf('static') > 0) ?
-      `${__dirname}/templates/static` :
-      `${__dirname}/templates/proxy`;
 
-    fs.readFile(tplFilePath, 'utf8', (err, tmpl)=>{
-      if (err) return callback(err);
+function makeSiteFromTemplate (tplFilePath, addSiteObj, callback) {
+  fs.readFile(tplFilePath, 'utf8', (err, tmpl)=>{
+    if (err) return callback(err);
+
+    try {
       var config = mustache.render(tmpl, addSiteObj);
-      var site = addSiteObj.tplServerName;
-      var tempfilepath = `${__dirname}/${site}`;
-      var sitesAvailable = `${NGINX_PATH}${sitesAvailableStr}/`;
+    } catch(e) {
+      return callback(e);
+    }
 
-      fs.writeFile(tempfilepath, config, (err)=>{
-        if(err) return callback(err);
-        sudoMove(tempfilepath, sitesAvailable, true, (err)=>{
-          if(err) return callback(err);
-          var msg = `${site} config file will be added to ${sitesAvailableStr}`;
-          callback(null, msg);
-        });
-      });
-    });
-  }else{
-    var usrTplFilePath = addSiteObj.askAddSiteConfig;
+    var siteName = addSiteObj.tplServerName;
+    var tempfilepath = `${__dirname}/${siteName}`;
     var sitesAvailable = `${NGINX_PATH}${sitesAvailableStr}/`;
 
-    sudoMove(usrTplFilePath, sitesAvailable, false, callback);
-    return callback();
+    fs.writeFile(tempfilepath, config, (err)=>{
+      if(err) return callback(err);
+      sudoMove(tempfilepath, sitesAvailable, true, (err)=>{
+        if(err) return callback(err);
+        var msg = `${siteName} config file will be added to ${sitesAvailableStr}`;
+        callback(null, msg);
+      });
+    });
+  });
+}
+
+function makeSiteFromUserTemplate (addSiteObj, callback) {
+  var usrTplFilePath = addSiteObj.askAddSiteConfig;
+  var sitesAvailable = `${NGINX_PATH}${sitesAvailableStr}/`;
+
+  return sudoMove(usrTplFilePath, sitesAvailable, false, callback);
+}
+
+function addStaticSite (addSiteObj, callback){
+  if (addSiteObj.askAddSite.toLowerCase().indexOf('template') > 0){
+    var tplFilePath = `${__dirname}/templates/static`
+
+    return makeSiteFromTemplate(tplFilePath, addSiteObj, callback)
+  }else{
+    return makeSiteFromUserTemplate(addSiteObj, callback)
+  }
+}
+
+function addProxySite (addSiteObj, callback){
+  if (addSiteObj.askAddSite.toLowerCase().indexOf('template') > 0){
+    var tplFilePath = `${__dirname}/templates/proxy`
+
+    return makeSiteFromTemplate(tplFilePath, addSiteObj, callback);
+  }else{
+    return makeSiteFromUserTemplate(addSiteObj, callback)
   }
 }
 
