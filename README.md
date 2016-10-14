@@ -20,12 +20,6 @@ server blocks are setup in the sites-available directory and are "turned on"
 by creating a symbolic link to the sites-enabled directory. In the example
 above, site-one and site-two are setup but only site-two is served by nginx.
 
-## NOTE
-
-**Writing tests for this has made me realize that the API is difficult to work
-with. I'm slowly fixing that. That means that the documentation and tests are
-incomplete.**
-
 ## Installation
 
 This is a scoped [NPM](https://www.npmjs.com) package, [Node.js](https://nodejs.org/en/)

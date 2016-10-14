@@ -142,4 +142,30 @@ test.cb(`make sure site is disabled before it's removed`, function (t) {
   })
 })
 
-test.todo('test nodeginx.manageNginx')
+test.cb('test nodeginx.manageNginx("stop")', function (t) {
+  nodeginx.manageNginx('stop', function (err) {
+    require('child_process').exec('ps aux | grep nginx | grep "master process"',
+      function (err, stdout, stderr) {
+        var processIsRunning = stdout.trim().split('\n').length > 1
+        if (err) return t.end(err)
+        if(processIsRunning)
+          return t.end(new Error('process should not be running'))
+        t.end()
+      }
+    )
+  })
+})
+
+test.cb('test nodeginx.manageNginx("start")', function (t) {
+  nodeginx.manageNginx('start', function (err) {
+    require('child_process').exec('ps aux | grep nginx | grep "master process"',
+      function (err, stdout, stderr) {
+        var processIsRunning = stdout.trim().split('\n').length > 1
+        if (err) return t.end(err)
+        if(!processIsRunning)
+          return t.end(new Error('process should be running'))
+        t.end()
+      }
+    )
+  })
+})
