@@ -142,6 +142,9 @@ test.cb(`make sure site is disabled before it's removed`, function (t) {
   })
 })
 
+test.todo('add site from user template')
+test.todo('use temp folder instead of /etc/nginx')
+
 test.cb('test nodeginx.manageNginx("stop")', function (t) {
   nodeginx.manageNginx('stop', function (err) {
     require('child_process').exec('ps aux | grep nginx | grep "master process"',

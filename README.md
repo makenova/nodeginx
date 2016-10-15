@@ -99,6 +99,14 @@ string : '127.0.0.1' The IP address of the server where the site is running
 
 string : '8080' The port that the application is running on
 
+### `nodeginx.addSiteFromUserFile(siteObj, cb)`
+
+Add a site from a users config file. The file will be copied to the `sites-available` directory.
+
+###### `siteObj.askAddSiteConfig`
+
+string : ~/panda path to the config file
+
 ### `nodeginx.removeSite(siteName, cb)`
 
 Remove a site from the sites-available directory. If the site is enabled i.e.

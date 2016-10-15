@@ -20,6 +20,7 @@ module.exports = {
   removeSite: removeSite,
   addStaticSite: addStaticSite,
   addProxySite: addProxySite,
+  addSiteFromUserFile: makeSiteFromUserTemplate,
   constants: {
     NGINX_PATH: NGINX_PATH,
     sitesAvailableStr: sitesAvailableStr,
@@ -117,23 +118,15 @@ function makeSiteFromUserTemplate (addSiteObj, callback) {
 }
 
 function addStaticSite (addSiteObj, callback){
-  if (addSiteObj.askAddSite.toLowerCase().indexOf('template') > 0){
-    var tplFilePath = `${__dirname}/templates/static`
+  var tplFilePath = `${__dirname}/templates/static`
 
-    return makeSiteFromTemplate(tplFilePath, addSiteObj, callback)
-  }else{
-    return makeSiteFromUserTemplate(addSiteObj, callback)
-  }
+  return makeSiteFromTemplate(tplFilePath, addSiteObj, callback)
 }
 
 function addProxySite (addSiteObj, callback){
-  if (addSiteObj.askAddSite.toLowerCase().indexOf('template') > 0){
-    var tplFilePath = `${__dirname}/templates/proxy`
+  var tplFilePath = `${__dirname}/templates/proxy`
 
-    return makeSiteFromTemplate(tplFilePath, addSiteObj, callback);
-  }else{
-    return makeSiteFromUserTemplate(addSiteObj, callback)
-  }
+  return makeSiteFromTemplate(tplFilePath, addSiteObj, callback);
 }
 
 function removeSite (site, removeSiteDoneCB){
