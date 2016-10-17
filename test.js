@@ -1,10 +1,10 @@
 var fs = require('fs')
 var os = require('os')
 var path = require('path')
-var test = require('ava').test
+var exec = require('child_process').exec
 var rimraf = require('rimraf')
+var test = require('ava').test
 var nodeginx = require('./nodeginx')
-
 const TEMP_FOLDER = os.tmpdir()
 const AVAILABLE = path.join(TEMP_FOLDER, nodeginx.constants.sitesAvailableStr)
 const ENABLED = path.join(TEMP_FOLDER, nodeginx.constants.sitesEnabledStr)
@@ -25,6 +25,7 @@ const proxySiteObj = {
   proxyServerPort: '8080'
 }
 
+var userSiteTemplateObj = { askAddSiteConfig: path.join(TEMP_FOLDER, 'wombat') }
 
 // helpers
 function fileExists (path, callback) {
@@ -51,15 +52,35 @@ function deletefolder (folder) {
   })
 }
 
+function makeUserSiteFile (filename) {
+  return new Promise (function (resolve, reject) {
+    fs.writeFile(filename, 'testfile', 'utf8', function (err) {
+      if (err) return reject(err)
+      resolve()
+    })
+  })
+}
+
+function deleteUserSiteFile (filename) {
+  return new Promise (function (resolve, reject) {
+    fs.unlink(filename, function (err) {
+      if (err) return reject(err)
+      resolve()
+    })
+  })
+}
+
 // tests
 test.before(async function (t) {
   await makefolder(AVAILABLE)
     .then(makefolder(ENABLED))
+    .then(makeUserSiteFile(userSiteTemplateObj.askAddSiteConfig))
 })
 
 test.after.always( async function () {
   await deletefolder(AVAILABLE)
     .then(deletefolder(ENABLED))
+    .then(deleteUserSiteFile(userSiteTemplateObj.askAddSiteConfig))
 })
 
 test.cb('add static site', function (t) {
@@ -140,7 +161,7 @@ test.cb(`make sure site is disabled before it's removed`, function (t) {
 
 test.cb('test nodeginx.manageNginx("stop")', function (t) {
   nodeginx.manageNginx('stop', function (err) {
-    require('child_process').exec('ps aux | grep nginx | grep "master process"',
+    exec('ps aux | grep nginx | grep "master process"',
       function (err, stdout, stderr) {
         var processIsRunning = stdout.trim().split('\n').length > 1
         if (err) return t.end(err)
@@ -154,7 +175,7 @@ test.cb('test nodeginx.manageNginx("stop")', function (t) {
 
 test.cb('test nodeginx.manageNginx("start")', function (t) {
   nodeginx.manageNginx('start', function (err) {
-    require('child_process').exec('ps aux | grep nginx | grep "master process"',
+    exec('ps aux | grep nginx | grep "master process"',
       function (err, stdout, stderr) {
         var processIsRunning = stdout.trim().split('\n').length > 1
         if (err) return t.end(err)
@@ -166,5 +187,15 @@ test.cb('test nodeginx.manageNginx("start")', function (t) {
   })
 })
 
-test.todo('add site from user template')
-test.todo('use temp folder instead of /etc/nginx')
+test.cb('add site from user config', function (t) {
+  nodeginx.addSiteFromUserFile(userSiteTemplateObj, function (err) {
+    if (err) return t.end(err)
+    var filename = path.parse(userSiteTemplateObj.askAddSiteConfig).name
+    fileExists(path.join(AVAILABLE, filename), function (exists) {
+        if (!exists)
+          return t.end(new Error('failed to create site from user config'))
+        t.end()
+      }
+    )
+  })
+})
