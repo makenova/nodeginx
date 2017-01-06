@@ -36,8 +36,8 @@ function fileExists (path, callback) {
 
 function makefolder (folder) {
   return new Promise(function (resolve, reject) {
-    fs.mkdir(folder, function(err) {
-      if(err) return reject(err)
+    fs.mkdir(folder, function (err) {
+      if (err) return reject(err)
       resolve()
     })
   })
@@ -53,7 +53,7 @@ function deletefolder (folder) {
 }
 
 function makeUserSiteFile (filename) {
-  return new Promise (function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     fs.writeFile(filename, 'testfile', 'utf8', function (err) {
       if (err) return reject(err)
       resolve()
@@ -62,7 +62,7 @@ function makeUserSiteFile (filename) {
 }
 
 function deleteUserSiteFile (filename) {
-  return new Promise (function (resolve, reject) {
+  return new Promise(function (resolve, reject) {
     fs.unlink(filename, function (err) {
       if (err) return reject(err)
       resolve()
@@ -77,14 +77,14 @@ test.before(async function (t) {
     .then(makeUserSiteFile(userSiteTemplateObj.askAddSiteConfig))
 })
 
-test.after.always( async function () {
+test.after.always(async function () {
   await deletefolder(AVAILABLE)
     .then(deletefolder(ENABLED))
     .then(deleteUserSiteFile(userSiteTemplateObj.askAddSiteConfig))
 })
 
 test.cb('add static site', function (t) {
-  nodeginx.addStaticSite(staticSiteObj, function(err, message) {
+  nodeginx.addStaticSite(staticSiteObj, function (err, message) {
     if (err) t.end(err)
     fileExists(path.join(AVAILABLE, staticSiteObj.tplServerName),
       function (exists) {
@@ -133,7 +133,7 @@ test.cb('remove site', function (t) {
 })
 
 test.cb('add proxy site', function (t) {
-  nodeginx.addProxySite(proxySiteObj, function(err, message) {
+  nodeginx.addProxySite(proxySiteObj, function (err, message) {
     if (err) return t.end(err)
     fs.stat(path.join(AVAILABLE, proxySiteObj.tplServerName),
       function (err) {
@@ -148,8 +148,8 @@ test.cb(`make sure site is disabled before it's removed`, function (t) {
   nodeginx.enableSite(proxySiteObj.tplServerName, function (err) {
     if (err) return t.end('Failed to enable site befort test')
     nodeginx.removeSite(proxySiteObj.tplServerName, function (err) {
-        if (err) return t.end(err)
-        fileExists(path.join(ENABLED, proxySiteObj.tplServerName),
+      if (err) return t.end(err)
+      fileExists(path.join(ENABLED, proxySiteObj.tplServerName),
         function (exists) {
           if (exists) return t.end(new Error('Failed to remove proxy site'))
           t.end()
@@ -161,12 +161,14 @@ test.cb(`make sure site is disabled before it's removed`, function (t) {
 
 test.cb('test nodeginx.manageNginx("stop")', function (t) {
   nodeginx.manageNginx('stop', function (err) {
+    if (err) t.end(err)
     exec('ps aux | grep nginx | grep "master process"',
       function (err, stdout, stderr) {
         var processIsRunning = stdout.trim().split('\n').length > 1
         if (err) return t.end(err)
-        if(processIsRunning)
+        if (processIsRunning) {
           return t.end(new Error('process should not be running'))
+        }
         t.end()
       }
     )
@@ -175,12 +177,14 @@ test.cb('test nodeginx.manageNginx("stop")', function (t) {
 
 test.cb('test nodeginx.manageNginx("start")', function (t) {
   nodeginx.manageNginx('start', function (err) {
+    if (err) t.end(err)
     exec('ps aux | grep nginx | grep "master process"',
       function (err, stdout, stderr) {
         var processIsRunning = stdout.trim().split('\n').length > 1
         if (err) return t.end(err)
-        if(!processIsRunning)
+        if (!processIsRunning) {
           return t.end(new Error('process should be running'))
+        }
         t.end()
       }
     )
@@ -192,10 +196,10 @@ test.cb('add site from user config', function (t) {
     if (err) return t.end(err)
     var filename = path.parse(userSiteTemplateObj.askAddSiteConfig).name
     fileExists(path.join(AVAILABLE, filename), function (exists) {
-        if (!exists)
-          return t.end(new Error('failed to create site from user config'))
-        t.end()
+      if (!exists) {
+        return t.end(new Error('failed to create site from user config'))
       }
-    )
+      t.end()
+    })
   })
 })
