@@ -10,7 +10,7 @@ so,
 |-- nginx
      |-- nginx.config
      |-- sites-enabled
-     |    |-- site-two
+     |    +-- site-two
      +-- sites-available
           |-- site-one
           +-- site-two
@@ -26,7 +26,7 @@ This is a scoped [NPM](https://www.npmjs.com) package, [Node.js](https://nodejs.
 is a prerequisite.
 
 ```
-$ npm install --g @makenova/nodeginx
+$ npm install -g @makenova/nodeginx
 ```
 
 ## Use
