@@ -1,9 +1,9 @@
 server {
-	listen {{tplPort}};
-	server_name {{tplServerName}};
+	listen {{port}};
+	server_name {{serverName}};
 
 	location / {
-		root {{{tplSiteRoot}}};
+		root {{{siteRoot}}};
 		index index.html index.htm;
 	}
 }

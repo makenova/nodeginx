@@ -1,6 +1,6 @@
 server {
-	listen {{tplPort}};
-	server_name {{tplServerName}};
+	listen {{port}};
+	server_name {{serverName}};
 
 	location / {
 		proxy_pass http://{{proxyServerIp}}:{{proxyServerPort}}/;
