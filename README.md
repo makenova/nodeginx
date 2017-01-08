@@ -57,21 +57,17 @@ Add a static site to the sites-available directory. The callback(`cb`) returns a
 
 The siteObj should have the following properties:
 
-###### `siteObj.askAddSite `
-
-string : 'use static template'
-
-###### `siteObj.tplPort`
+###### `siteObj.port`
 
 nubmer : 80 the port that the site should be served on
 
-###### `siteObj.tplServerName`
+###### `siteObj.serverName`
 
 string : 'panda' the name of the site
 
-###### `siteObj.tplSiteRoot`
+###### `siteObj.siteRoot`
 
-string : '/home/user/panda' The path to the site
+string : '/home/user/panda' The absolute path to the site
 
 ### `nodeginx.addProxySite(siteObj, cb)`
 
@@ -79,15 +75,11 @@ Add a proxy site to the sites-available directory. The callback(`cb`) returns an
 
 The siteObj should have the following properties:
 
-###### `siteObj.askAddSite `
-
-string : 'use proxy template'
-
-###### `siteObj.tplPort`
+###### `siteObj.port`
 
 nubmer : 80 the port that the site should be served on
 
-###### `siteObj.tplServerName`
+###### `siteObj.serverName`
 
 string : 'panda' the name of the site
 
@@ -103,9 +95,9 @@ string : '8080' The port that the application is running on
 
 Add a site from a users config file. The file will be copied to the `sites-available` directory.
 
-###### `siteObj.askAddSiteConfig`
+###### `siteObj.path`
 
-string : ~/panda path to the config file
+string : '/home/user/panda' An absolute path to the config file
 
 ### `nodeginx.removeSite(siteName, cb)`
 
