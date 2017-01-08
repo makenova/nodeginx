@@ -85,17 +85,17 @@ function disableSite (site, callback) {
   })
 }
 
-function makeSiteFromTemplate (tplFilePath, addSiteObj, callback) {
+function makeSiteFromTemplate (tplFilePath, options, callback) {
   fs.readFile(tplFilePath, 'utf8', (err, tmpl) => {
     if (err) return callback(err)
 
     try {
-      var config = mustache.render(tmpl, addSiteObj)
+      var config = mustache.render(tmpl, options)
     } catch (e) {
       return callback(e)
     }
 
-    var siteName = addSiteObj.tplServerName
+    var siteName = options.serverName
     var tempfilepath = `${__dirname}/${siteName}`
     var sitesAvailable = `${NGINX_PATH}${sitesAvailableStr}/`
 
@@ -111,22 +111,22 @@ function makeSiteFromTemplate (tplFilePath, addSiteObj, callback) {
 }
 
 function makeSiteFromUserTemplate (addSiteObj, callback) {
-  var usrTplFilePath = addSiteObj.askAddSiteConfig
+  var usrTplFilePath = addSiteObj.path
   var sitesAvailable = `${NGINX_PATH}${sitesAvailableStr}/`
 
   return sudoMove(usrTplFilePath, sitesAvailable, false, callback)
 }
 
-function addStaticSite (addSiteObj, callback) {
-  var tplFilePath = `${__dirname}/templates/static`
+function addStaticSite (options, callback) {
+  var templateFilePath = `${__dirname}/templates/static`
 
-  return makeSiteFromTemplate(tplFilePath, addSiteObj, callback)
+  return makeSiteFromTemplate(templateFilePath, options, callback)
 }
 
-function addProxySite (addSiteObj, callback) {
-  var tplFilePath = `${__dirname}/templates/proxy`
+function addProxySite (options, callback) {
+  var templateFilePath = `${__dirname}/templates/proxy`
 
-  return makeSiteFromTemplate(tplFilePath, addSiteObj, callback)
+  return makeSiteFromTemplate(templateFilePath, options, callback)
 }
 
 function removeSite (site, removeSiteDoneCB) {
