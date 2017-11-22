@@ -38,9 +38,9 @@ var nodeginx = require('@makenova/nodeginx')
 
 const staticSiteObj = {
   askAddSite: 'use static template',
-  tplPort: '80',
-  tplServerName: 'panda',
-  tplSiteRoot: '/home/user/panda'
+  port: '80',
+  serverName: 'panda',
+  siteRoot: '/home/user/panda'
 }
 
 nodeginx.addStaticSite(staticSiteObj, function (err, message) {
